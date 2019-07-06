@@ -1,25 +1,25 @@
+import sys
 import json
 import requests
 from bs4 import BeautifulSoup
 
-amz = "https://www.amazon.com/s?k=black+feminism"
-af = "https://andrefincato.info"
+
+amz_base = "https://www.amazon.com"
+search = sys.argv[1].replace(' ', '+')
+amz_search = amz_base + "/s?k=" + search
+print(amz_search)
 
 amz_hdrs = {'User-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36'}
 
-r = requests.get(amz, headers=amz_hdrs)
+r = requests.get(amz_search, headers=amz_hdrs)
 soup = BeautifulSoup(r.text, 'lxml')
 
-# -- amazon search results list urls
 result_urls = []
 for a in soup.findAll('a', class_='a-link-normal a-text-normal', href=True):
   if a.text:
     result_urls.append(a['href'])
 
-# print(result_urls)
-
 books = []
-amz_base = 'https://www.amazon.com'
 
 with requests.Session() as s:
   for url in result_urls:
