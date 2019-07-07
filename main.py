@@ -7,9 +7,12 @@ import io
 import csv
 
 amz_base = "https://www.amazon.com"
+
 # convert whitespace w/ `+` (urlencode)
 search = sys.argv[1].replace(' ', '+')
+
 amz_search = amz_base + "/s?k=" + search
+
 amz_hdrs = {'User-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36'}
 
 r = requests.get(amz_search, headers=amz_hdrs)
@@ -43,8 +46,6 @@ with requests.Session() as s:
     else:
       book['author'] = author
 
-    # print(book)
-
     # -- 'also bought' section
 
     # check if page has 'other users also bought' section
@@ -61,16 +62,16 @@ with requests.Session() as s:
       suggested_books = []
 
       def also_bought(data):
-        for item in data.values():
+        for item in data:
           book = {}
-          soup = BeautifulSoup(item[0], 'lxml')
+          soup = BeautifulSoup(item, 'lxml')
           title_link = soup.find('a', href=True)
           book['title'] = title_link.contents[-2].text.strip()
           book['url'] = amz_base + title_link['href']
           book['author'] = soup.findAll('div', class_='a-row a-size-small')[0].contents[0].text.strip()
           suggested_books.append(book)
 
-      also_bought(suggested_list)
+      also_bought(suggested_list['data'])
       book['also-bought'] = suggested_books
 
     except Exception as e:
