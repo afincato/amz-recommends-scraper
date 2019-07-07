@@ -1,14 +1,14 @@
 import sys
+import time
 import json
 import requests
 from bs4 import BeautifulSoup
-
+import io
+import csv
 
 amz_base = "https://www.amazon.com"
 search = sys.argv[1].replace(' ', '+')
 amz_search = amz_base + "/s?k=" + search
-print(amz_search)
-
 amz_hdrs = {'User-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36'}
 
 r = requests.get(amz_search, headers=amz_hdrs)
@@ -54,3 +54,19 @@ with requests.Session() as s:
       suggested_books.append(book)
 
     books.append(book)
+
+
+def write_to_csv(fn, data):
+  timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+  filename = fn + '_' + timestamp
+
+  output = io.StringIO()
+  f = csv.writer(open('dump/%s.csv' % filename, 'w'))
+  f.writerow(['title', 'url'])
+  csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
+  for item in data:
+    f.writerow(item.values())
+
+
+write_to_csv(search, books)
