@@ -7,7 +7,7 @@ little python scraper to grab “amazon’s recommends“ suggestions data.
 
 to run the script, the easiest would be to 
 
-- install / use pipenv
+- install / use [pipenv](https://docs.pipenv.org/en/latest/)
 - clone the repo
 - install the dependencies listed in the `Pipfile`
 
