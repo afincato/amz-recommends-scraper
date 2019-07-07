@@ -24,7 +24,7 @@ books = []
 with requests.Session() as s:
   for url in result_urls:
     full_url = amz_base + url
-    print(full_url)
+    print('results: item url', full_url)
     r = s.get(full_url, headers=amz_hdrs)
     soup = BeautifulSoup(r.text, 'lxml')
 
@@ -35,9 +35,10 @@ with requests.Session() as s:
     similar = soup.find('div', id='p13n-m-desktop-dp-sims_purchase-similarities-sims-feature-1')
     similar = similar.find('div', class_='a-carousel-container').get('data-a-carousel-options')
     similar = json.loads(similar)
-    url_db = 'https://www.amazon.com/gp/p13n-shared/faceout-partial?asinMetadataKeys=adId&widgetTemplateClass=PI::Similarities::ViewTemplates::Carousel::Desktop&linkGetParameters={"pd_rd_wg":"G4g6j","pd_rd_r":"800cc3c7-9fe8-11e9-8e75-13ade7751b04","pf_rd_r":"0C102H6Y6RNRV0ASR3GS","pf_rd_p":"90485860-83e9-4fd9-b838-b28a9b7fda30","pd_rd_w":"r17fD"}&productDetailsTemplateClass=PI::P13N::ViewTemplates::ProductDetails::Desktop::Base&forceFreshWin=0&featureId=SimilaritiesCarousel&reftagPrefix=pd_sim_351&imageHeight=160&faceoutTemplateClass=PI::P13N::ViewTemplates::Product::Desktop::CarouselFaceout&imageWidth=160&auiDeviceType=desktop&schemaVersion=2&relatedRequestID=0C102H6Y6RNRV0ASR3GS&productDataFlavor=Faceout&maxLineCount=6&faceoutArgs={"productDetailsTemplateClass":"PI::P13N::ViewTemplates::ProductDetails::Desktop::Base"}&count=5&offset=55&asins='
-    ids = ','.join(similar['ajax']['id_list'])
-    url_bought_list = url_db + ids
+
+    url_db = amz_base + similar['ajax']['url'] + '?' + 'asinMetadataKeys=' + similar['ajax']['params']['asinMetadataKeys'] + '&widgetTemplateClass=' + similar['ajax']['params']['widgetTemplateClass'] + '&linkGetParameters=' + similar['ajax']['params']['linkGetParameters'] + '&productDetailsTemplateClass=' + similar['ajax']['params']['productDetailsTemplateClass'] + '&forceFreshWin=' + str(similar['ajax']['params']['forceFreshWin']) + '&featureId=' + similar['ajax']['params']['featureId'] + '&reftagPrefix=' + str(similar['ajax']['params']['reftagPrefix']) + '&imageHeight=' + str(similar['ajax']['params']['imageHeight']) + '&faceoutTemplateClass=' + similar['ajax']['params']['faceoutTemplateClass'] + '&imageWidth=' + str(similar['ajax']['params']['imageWidth']) + '&auiDeviceType=' + similar['ajax']['params']['auiDeviceType'] + '&schemaVersion=' + str(similar['ajax']['params']['schemaVersion']) + '&relatedRequestID=' + similar['ajax']['params']['relatedRequestID'] + '&productDataFlavor=' + similar['ajax']['params']['productDataFlavor'] + '&maxLineCount=' + str(similar['ajax']['params']['maxLineCount']) + '&faceoutArgs=' + similar['ajax']['params']['faceoutArgs'] + '&count=' + '5' + '&offset=' + str(similar['set_size']) + '&asins=' + ','.join(similar['ajax']['id_list']) + '&_='
+
+    url_bought_list = url_db
     rr = s.get(url_bought_list, headers=amz_hdrs)
     suggested_list = json.loads(rr.text)
 
