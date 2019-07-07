@@ -7,6 +7,7 @@ import io
 import csv
 
 amz_base = "https://www.amazon.com"
+# convert whitespace w/ `+` (urlencode)
 search = sys.argv[1].replace(' ', '+')
 amz_search = amz_base + "/s?k=" + search
 amz_hdrs = {'User-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36'}
@@ -29,31 +30,54 @@ with requests.Session() as s:
     soup = BeautifulSoup(r.text, 'lxml')
 
     book = {}
-    book['title'] = soup.find('h1', id='title').contents[1].text
-    book['author'] = soup.find('span', class_='author notFaded').find('a').text
+    book['title'] = soup.find('h1', id='title').contents[1].text.strip()
+    book['url'] = amz_base + url
+    author = soup.find('span', class_='author notFaded').find('a').text.strip()
 
-    similar = soup.find('div', id='p13n-m-desktop-dp-sims_purchase-similarities-sims-feature-1')
-    similar = similar.find('div', class_='a-carousel-container').get('data-a-carousel-options')
-    similar = json.loads(similar)
+    if 'Visit' in author:
+      sentence = author.split()
+      stop = ["Visit", "Amazon's", "Page"]
+      resultwords = [word for word in sentence if word not in stop]
+      author = ' '.join(resultwords)
+      book['author'] = author
+    else:
+      book['author'] = author
 
-    url_db = amz_base + similar['ajax']['url'] + '?' + 'asinMetadataKeys=' + similar['ajax']['params']['asinMetadataKeys'] + '&widgetTemplateClass=' + similar['ajax']['params']['widgetTemplateClass'] + '&linkGetParameters=' + similar['ajax']['params']['linkGetParameters'] + '&productDetailsTemplateClass=' + similar['ajax']['params']['productDetailsTemplateClass'] + '&forceFreshWin=' + str(similar['ajax']['params']['forceFreshWin']) + '&featureId=' + similar['ajax']['params']['featureId'] + '&reftagPrefix=' + str(similar['ajax']['params']['reftagPrefix']) + '&imageHeight=' + str(similar['ajax']['params']['imageHeight']) + '&faceoutTemplateClass=' + similar['ajax']['params']['faceoutTemplateClass'] + '&imageWidth=' + str(similar['ajax']['params']['imageWidth']) + '&auiDeviceType=' + similar['ajax']['params']['auiDeviceType'] + '&schemaVersion=' + str(similar['ajax']['params']['schemaVersion']) + '&relatedRequestID=' + similar['ajax']['params']['relatedRequestID'] + '&productDataFlavor=' + similar['ajax']['params']['productDataFlavor'] + '&maxLineCount=' + str(similar['ajax']['params']['maxLineCount']) + '&faceoutArgs=' + similar['ajax']['params']['faceoutArgs'] + '&count=' + '5' + '&offset=' + str(similar['set_size']) + '&asins=' + ','.join(similar['ajax']['id_list']) + '&_='
+    # print(book)
 
-    url_bought_list = url_db
-    rr = s.get(url_bought_list, headers=amz_hdrs)
-    suggested_list = json.loads(rr.text)
+    # -- 'also bought' section
 
-    suggested_books = []
-    for item in suggested_list.values():
-      book = {}
-      soup = BeautifulSoup(item[0], 'lxml')
-      link = soup.find('a', href=True)
-      book['title'] = link.contents[-2].text.strip()
-      print('suggested: item title', book['title'])
-      book['url'] = link['href']
-      print('suggested: item url', book['url'])
-      print('----------')
-      suggested_books.append(book)
+    # check if page has 'other users also bought' section
+    try:
+      similar = soup.find('div', id='p13n-m-desktop-dp-sims_purchase-similarities-sims-feature-1')
+      similar = similar.find('div', class_='a-carousel-container').get('data-a-carousel-options')
+      similar = json.loads(similar)
 
+      url_bought_list = amz_base + similar['ajax']['url'] + '?' + 'asinMetadataKeys=' + similar['ajax']['params']['asinMetadataKeys'] + '&widgetTemplateClass=' + similar['ajax']['params']['widgetTemplateClass'] + '&linkGetParameters=' + similar['ajax']['params']['linkGetParameters'] + '&productDetailsTemplateClass=' + similar['ajax']['params']['productDetailsTemplateClass'] + '&forceFreshWin=' + str(similar['ajax']['params']['forceFreshWin']) + '&featureId=' + similar['ajax']['params']['featureId'] + '&reftagPrefix=' + str(similar['ajax']['params']['reftagPrefix']) + '&imageHeight=' + str(similar['ajax']['params']['imageHeight']) + '&faceoutTemplateClass=' + similar['ajax']['params']['faceoutTemplateClass'] + '&imageWidth=' + str(similar['ajax']['params']['imageWidth']) + '&auiDeviceType=' + similar['ajax']['params']['auiDeviceType'] + '&schemaVersion=' + str(similar['ajax']['params']['schemaVersion']) + '&relatedRequestID=' + similar['ajax']['params']['relatedRequestID'] + '&productDataFlavor=' + similar['ajax']['params']['productDataFlavor'] + '&maxLineCount=' + str(similar['ajax']['params']['maxLineCount']) + '&faceoutArgs=' + similar['ajax']['params']['faceoutArgs'] + '&count=' + '5' + '&offset=' + str(similar['set_size']) + '&asins=' + ','.join(similar['ajax']['id_list']) + '&_='
+
+      # get json data from url
+      rr = s.get(url_bought_list, headers=amz_hdrs)
+      suggested_list = json.loads(rr.text)
+      suggested_books = []
+
+      def also_bought(data):
+        for item in data.values():
+          book = {}
+          soup = BeautifulSoup(item[0], 'lxml')
+          title_link = soup.find('a', href=True)
+          book['title'] = title_link.contents[-2].text.strip()
+          book['url'] = amz_base + title_link['href']
+          book['author'] = soup.findAll('div', class_='a-row a-size-small')[0].contents[0].text.strip()
+          suggested_books.append(book)
+
+      also_bought(suggested_list)
+      book['also-bought'] = suggested_books
+
+    except Exception as e:
+      print('suggested books, error:', e)
+      book['also-bought'] = 'empty'
+
+    # print(book)
     books.append(book)
 
 
