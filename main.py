@@ -63,11 +63,20 @@ def write_to_csv(fn, data):
 
   output = io.StringIO()
   f = csv.writer(open('dump/%s.csv' % filename, 'w'))
-  f.writerow(['title', 'url'])
+  f.writerow(['title', 'url', 'author', 'also-bought'])
   csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
   for item in data:
     f.writerow(item.values())
 
 
+def write_to_json(fn, data):
+  timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+  filename = fn + '_' + timestamp
+
+  with open('dump/%s.json' % filename, 'w') as fp:
+    json.dump(data, fp)
+
+
 write_to_csv(search, books)
+write_to_json(search, books)
